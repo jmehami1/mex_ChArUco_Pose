@@ -9,36 +9,16 @@
 #include <vector>
 #include <map>
 
-
-
 #define NUM_INPUTS_MAT 7
 #define NUM_OUTPUTS_MAT 3
 
-//#define SQUARES_X 8
-//#define SQUARES_Y 6
-//#define SQUARE_LENGTH 0.04f
-//#define MARKER_LENGTH 0.03f
-
-
-//template for creating opencv mat objects from input arrays of a specified data type
-//template <typename T>
-//cv::Mat createMatImage(T* data, int rows, int cols, int chs = 1)
-//{
-//    // Create Mat from buffer
-//    cv::Mat mat(rows, cols, CV_MAKETYPE(cv::DataType<T>::type, chs));
-//    memcpy(mat.data, data, rows*cols*chs * sizeof(T));
-//    return mat;
-//}
-
-
 /*
- * This is the function which estimates the pose of a ChArUco board.
+ * This is the function which estimates the pose of a ChArUco board all implemented in openCV
  *
 */
 bool EstimateCharucoPose(cv::Mat &image, const cv::Mat &cameraMatrix, const cv::Mat &distCoeffs,cv::Vec3d &rvec, cv::Vec3d &tvec, cv::Mat &imageCopy,
                          const int numSquaresX, const int numSquaresY, const double checkerSideLength, const double arucoSideLength)
 {
-
     cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
     cv::Ptr<cv::aruco::CharucoBoard> board = cv::aruco::CharucoBoard::create(numSquaresX, numSquaresY, checkerSideLength, arucoSideLength, dictionary);
     cv::Ptr<cv::aruco::DetectorParameters> params = cv::aruco::DetectorParameters::create();
@@ -55,26 +35,21 @@ bool EstimateCharucoPose(cv::Mat &image, const cv::Mat &cameraMatrix, const cv::
         cv::aruco::interpolateCornersCharuco(markerCorners, markerIds, image, board, charucoCorners, charucoIds, cameraMatrix, distCoeffs);
         // if at least one charuco corner detected
         if (charucoIds.size() > 0){
-
-            //found = cv::aruco::estimatePoseCharucoBoard(charucoCorners, charucoIds, board, cameraMatrix, distCoeffs, rvec, tvec);
-
             // if charuco pose is valid
             if (cv::aruco::estimatePoseCharucoBoard(charucoCorners, charucoIds, board, cameraMatrix, distCoeffs, rvec, tvec)){
                 cv::aruco::drawDetectedMarkers(imageCopy, markerCorners, markerIds);
                 cv::aruco::drawDetectedCornersCharuco(imageCopy, charucoCorners, charucoIds, cv::Scalar(255, 0, 0));
-
                 cv::aruco::drawAxis(imageCopy, cameraMatrix, distCoeffs, rvec, tvec, 0.1f);
                 return true;
             }
         }
-    } else {
-        return false;
     }
 
     return false;
 }
 
 
+//Helper function for used in mx_Array_Image2_Mat
 mwIndex subs(const mxArray *inputMatrix, const std::vector<mwIndex>& si)
 {
     std::vector<mwIndex> v(si);
@@ -82,85 +57,13 @@ mwIndex subs(const mxArray *inputMatrix, const std::vector<mwIndex>& si)
 }
 
 
-//*mxArray Mat2_mx_Array(const cv::Mat& mat, mxClassID classid = mxUINT8_CLASS)
-//{
-
-//    // handle special case of empty input Mat by returning 0x0 array
-//    if (mat.empty()) {
-//        // TODO: maybe return empty array of same dimensions 0x1, 1x0x2, ...
-//        p_ = mxCreateNumericMatrix(0, 0, classid, mxREAL);
-//        if (!p_)
-//            mexErrMsgIdAndTxt("mexopencv:error", "Allocation error");
-//        return;
-//    }
-
-//    // Create output mxArray (of specified type), equivalent to the input Mat
-//    const mwSize cn = mat.channels();
-//    const mwSize len = mat.total() * cn;
-//    std::vector<mwSize> sz(mat.size.p, mat.size.p + mat.dims);
-//    if (cn > 1)
-//        sz.push_back(cn);  // channels is treated as another dimension
-//    std::reverse(sz.begin(), sz.end());  // row vs. column major order
-//    if (classid == mxLOGICAL_CLASS)
-//        p_ = mxCreateLogicalArray(sz.size(), &sz[0]);
-//    else
-//        p_ = mxCreateNumericArray(sz.size(), &sz[0], classid, mxREAL);
-//    if (!p_)
-//        mexErrMsgIdAndTxt("mexopencv:error", "Allocation error");
-
-//    // fill output with values from input Mat
-//    // (linearized as a 1D-vector, both dimensions and channels)
-//    {
-//        // wrap destination data using a cv::Mat
-//        const int type = CV_MAKETYPE(DepthOf[classid], 1); // destination type
-//        cv::Mat m(len, 1, type, mxGetData(p_));  // only creates Mat header
-
-//        // copy flattened input to output array (converting to specified type)
-//        const cv::Mat mat0(len, 1, mat.depth(), mat.data); // no data copying
-//        if (classid == mxLOGICAL_CLASS) {
-//            // OpenCV's logical true is any nonzero, while MATLAB's true is 1
-//            cv::compare(mat0, 0, m, cv::CMP_NE); // values either 0 or 255
-//            m.setTo(1, m);  // values either 0 or 1 (CV_8U)
-//        }
-//        else
-//            mat0.convertTo(m, type);
-//    }
-
-//    // rearrange dimensions of mxArray by calling PERMUTE from MATLAB. We want
-//    // to convert from row-major order (C-style, last dim changes fastest) to a
-//    // column-major order (MATLAB-style, first dim changes fastest). This will
-//    // handle all cases of cv::Mat as multi-channels and/or multi-dimensions.
-//    std::vector<double> order;
-//    order.reserve(sz.size());
-//    for (int i=sz.size(); i>0; i--)
-//        order.push_back(i);
-
-//    // CALL: out = permute(in, ndims(in):-1:1)
-//    mxArray *lhs, *rhs[2];
-//    rhs[0] = const_cast<mxArray*>(p_);
-//    rhs[1] = MxArray(order);
-//    lhs = NULL;              // new data copy will be returned
-//    if (mexCallMATLAB(1, &lhs, 2, rhs, "permute") != 0)
-//        mexErrMsgIdAndTxt("mexopencv:error", "Error calling permute");
-//    p_ = lhs;
-//    mxDestroyArray(rhs[0]);  // discard old copy
-//    mxDestroyArray(rhs[1]);
-//    CV_DbgAssert(!isNull() && classID()==classid && numel()==len);
-//}
-
-
-
-
-cv::Mat mx_Array_Image2_Mat(const mxArray *inputMatrix)//, int depth, bool transpose)
+cv::Mat mx_Array_Image2_Mat(const mxArray *inputMatrix)
 {
 
     uint8_T *inImgArr = mxGetUint8s(inputMatrix);
     const mwSize *dims = mxGetDimensions(inputMatrix);
     mwSize ndims = mxGetNumberOfDimensions(inputMatrix);
-
     const mxClassID classID = mxGetClassID(inputMatrix);
-
-
 
     // Create cv::Mat object (of the specified depth), equivalent to mxArray.
     // At this point we create either a 2-dim with 1-channel mat, or a 2-dim
@@ -176,6 +79,7 @@ cv::Mat mx_Array_Image2_Mat(const mxArray *inputMatrix)//, int depth, bool trans
     std::vector<cv::Mat> channels(nchannels);
     std::vector<mwSize> si(d.size(), 0);                 // subscript index
     const int type = CV_MAKETYPE(depth, 1); // Source type
+
     for (mwIndex i = 0; i<nchannels; ++i) {
         si[si.size() - 1] = i;                   // last dim is a channel idx
         void *pd = reinterpret_cast<void*>(
@@ -193,10 +97,11 @@ cv::Mat mx_Array_Image2_Mat(const mxArray *inputMatrix)//, int depth, bool trans
         //if (transpose)
         cv::transpose(channels[i], channels[i]);  // in-place transpose
     }
+
     // Merge channels back into one cv::Mat array
     cv::merge(channels, mat);
     cv::cvtColor(mat, mat, cv::COLOR_RGB2BGR);
-    //const cv::Mat mat = (cv::Mat_<float>(1,5) << 0.0347, -0.0918, -0.0042, 0.0057, -0.0898);
+
     return mat;
 }
 
@@ -225,6 +130,7 @@ cv::Mat double_mxArray_matrix2cv_Mat_matrix(const mxArray *inputMatrix)
         }
     }
 
+    //cast cv::_Mat to cv::Mat
     return ((cv::Mat) M);
 }
 
@@ -265,33 +171,14 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 
     //**************1ST INPUT**************************
 
-    //get pointer to passed in image from Matlab.
-
     cv::Mat inImgMat = mx_Array_Image2_Mat(prhs[0]);
 
-    //std::cout << "M = " << std::endl << " "  << inImgMat << std::endl << std::endl;
-
-    //uint8_T *inImgArr = mxGetUint8s(prhs[0]);
     const mwSize *inImgDim = mxGetDimensions(prhs[0]);
     mwSize numImgDim = mxGetNumberOfDimensions(prhs[0]);
 
     //convert dimensions to integer
     const int inImgH = inImgDim[0];
     const int inImgW = inImgDim[1];
-    const int inImgC = inImgDim[2];
-
-
-    //    //Need to reorganise the array to correctly be read into opencv MAT object
-    ////    uint8_T inImgArrOrg[inImgH*inImgW*inImgC] = {0};
-
-    ////    for (int i = 0; i < inImgH*inImgW; i++){
-    ////        for (int j = 0; j < inImgC; j++)
-    ////            inImgArrOrg[i*inImgC+j] = inImgArr[j*inImgH*inImgW + i];
-    ////    }
-
-    //    //Create opencv MAT type
-    //    cv::Mat inImgMat = createMatImage<uint8_T>(inImgArr, inImgH, inImgW, inImgC);
-
 
     if (inImgMat.empty())
         mexErrMsgTxt("Could not read in image to opencv MAT type");
@@ -299,7 +186,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
     //**************2ND INPUT**************************
 
     const cv::Mat intrMatrix = double_mxArray_matrix2cv_Mat_matrix(prhs[1]);
-
 
     //**************3RD INPUT**************************
 
@@ -321,39 +207,22 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 
     const double arucoSideLength = (double)mxGetScalar(prhs[6]);
 
-
-    //     //uint8_T *pt = mxGetUint8s(prhs[3]);
-    //    //const int numSquaresX = pt[0];
-
-    //     std::cout << numSquaresX << " " << numSquaresY << " " << checkerSideLength << " " std::endl;
-
-
-
     //Run the Charuco Pose estimation function
     cv::Vec3d rvec, tvec;
-    //bool foundPose = false;
 
-    //    const cv::Mat intrMatrix = (cv::Mat_<float>(3,3) << 532.5681, 0, 327.4995, 0, 531.9054, 231.2278, 0, 0, 1);
-    //    const cv::Mat distCoef = (cv::Mat_<float>(1,5) << 0.0347, -0.0918, -0.0042, 0.0057, -0.0898);
-
+    //Copy passed in image
     cv::Mat imgWithPose;
     inImgMat.copyTo(imgWithPose);
 
-    cv::imwrite("input.png", inImgMat);
-
-
+    //get the pose of the board from the function
     bool foundPose = EstimateCharucoPose(inImgMat, intrMatrix, distCoef, rvec, tvec, imgWithPose, numSquaresX, numSquaresY, checkerSideLength, arucoSideLength);
-
-    cv::imwrite("output.png", imgWithPose);
-
-    //    std::cout << rvec << std::endl;
 
     //Convert from Rodrigues vector to rotation matrix
     cv::Mat rotMat;
     cv::Rodrigues(rvec,rotMat);
 
 
-    //    //**************FIRST OUTPUT**************************
+    //**************1ST OUTPUT**************************
 
     plhs[0] = mxCreateDoubleMatrix(3,3, mxREAL);
 
@@ -363,7 +232,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 
     for (int i = 0; i < 3; i++){
         for (int j = 0; j < 3; j++){
-            //            pr[arrIndex] = rotMat.at<double>(j,i);
             *(pr+arrIndex) = rotMat.at<double>(j,i);
             arrIndex++;
         }
@@ -378,20 +246,13 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
     for (int i = 0; i < 3; i++)
         *(pr+i) = tvec[i];
 
-    //        std::cout << "FLAG 2" << std::endl;
-
-
-    //    //**************THIRD OUTPUT**************************
+    //**************THIRD OUTPUT**************************
 
     plhs[2] = mxCreateLogicalScalar(foundPose);
-
-           std::cout << "FLAG 3" << std::endl;
-
 
     //**************FOURTH OUTPUT************************** [OPTIONAL]
 
     if (nlhs == NUM_OUTPUTS_MAT+1) {
-
         plhs[3] = mxCreateNumericArray(numImgDim,inImgDim, mxUINT8_CLASS, mxREAL);
 
         char* outMat = (char*) mxGetData(plhs[3]);
@@ -399,7 +260,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
         cv::Vec3b pixel;
         arrIndex = 0;
 
-        //for (int k = 0; k < inImgC; k++){
+        //Store image pixel channel colours into a 1D array used for passing to matlab
         for (int j = 0; j < inImgW; j++){
             for (int i = 0; i < inImgH; i++){
                 pixel = imgWithPose.at<cv::Vec3b>(i,j);
@@ -408,14 +269,9 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
                 outMat[inImgH*inImgW+arrIndex] = pixel[1]; //G
                 outMat[2*inImgH*inImgW+arrIndex] = pixel[0]; //B
 
-                //(outMat[arrIndex] = imgWithPose.at<uchar>(i,j,k);
-
                 arrIndex++;
             }
         }
-       // }
     }
-
-    //    std::cout << "FLAG 4" << std::endl;
 
 }
