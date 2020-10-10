@@ -16,7 +16,7 @@ end
 run(['rvctools' filesep 'startup_rvc.m']);
 
 %test image
-img = imread("patexample.png");
+img = imread(['Images', filesep,'patexample.png']);
 
 %camera parameters
 intrMat = [532.568131996427,0,0;0,531.905416600879,0;327.499527166381,231.227840418968,1]; %intrinsic matrix for opencv format
