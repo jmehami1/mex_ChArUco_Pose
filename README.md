@@ -6,7 +6,18 @@ The Mex file should be located in the `bin` directory with the name `CharucoPose
 
 **To run the Mex file OpenCV must be installed.**
 
+## Building Mex File
 
+Create a `build` directory inside current directory.
+
+In a terminal pointing to build run the following:
+
+```bash
+cmake ..
+make
+```
+
+The built Mex file can be found in the  `bin`  directory.
 
 ## ChArUco Board
 
