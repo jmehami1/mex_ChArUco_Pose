@@ -22,6 +22,21 @@ if (Matlab_FOUND)
         RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
         )
 
+    matlab_add_mex(
+        NAME ArucoPixDect
+        SRC mex_aruco_pixel_detection.cpp
+        LINK_TO ${OpenCV_LIBS}
+        )
+
+
+    set_target_properties( ArucoPixDect
+        PROPERTIES
+        COMPILE_FLAGS "-fvisibility=default"
+        ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
+        LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
+        RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
+        )
+
     message(STATUS "Mex file can be found in ${PROJECT_SOURCE_DIR}/bin")
 else ()
     message(WARNING "MATLAB root directory not found. Failed to build MATLAB bindings.")

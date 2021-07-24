@@ -9,44 +9,8 @@
 #include <vector>
 #include <map>
 
-#define NUM_INPUTS_MAT 7
-#define NUM_OUTPUTS_MAT 3
-
-/*
- * This is the function which estimates the pose of a ChArUco board all implemented in openCV
- *
-*/
-bool EstimateCharucoPose(cv::Mat &image, const cv::Mat &cameraMatrix, const cv::Mat &distCoeffs,cv::Vec3d &rvec, cv::Vec3d &tvec, cv::Mat &imageCopy,
-                         const int numSquaresX, const int numSquaresY, const double checkerSideLength, const double arucoSideLength)
-{
-    cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
-    cv::Ptr<cv::aruco::CharucoBoard> board = cv::aruco::CharucoBoard::create(numSquaresX, numSquaresY, checkerSideLength, arucoSideLength, dictionary);
-    cv::Ptr<cv::aruco::DetectorParameters> params = cv::aruco::DetectorParameters::create();
-
-    params->doCornerRefinement = true;
-
-    std::vector<int> markerIds;
-    std::vector<std::vector<cv::Point2f> > markerCorners;
-    cv::aruco::detectMarkers(image, board->dictionary, markerCorners, markerIds, params);
-
-    if (markerIds.size() > 0) {
-        std::vector<cv::Point2f> charucoCorners;
-        std::vector<int> charucoIds;
-        cv::aruco::interpolateCornersCharuco(markerCorners, markerIds, image, board, charucoCorners, charucoIds, cameraMatrix, distCoeffs);
-        // if at least one charuco corner detected
-        if (charucoIds.size() > 0){
-            // if charuco pose is valid
-            if (cv::aruco::estimatePoseCharucoBoard(charucoCorners, charucoIds, board, cameraMatrix, distCoeffs, rvec, tvec)){
-                cv::aruco::drawDetectedMarkers(imageCopy, markerCorners, markerIds);
-                cv::aruco::drawDetectedCornersCharuco(imageCopy, charucoCorners, charucoIds, cv::Scalar(255, 0, 0));
-                cv::aruco::drawAxis(imageCopy, cameraMatrix, distCoeffs, rvec, tvec, 0.1f);
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
+#define NUM_INPUTS_MAT 1
+#define NUM_OUTPUTS_MAT 2
 
 
 //Helper function for used in mx_Array_Image2_Mat
@@ -70,6 +34,7 @@ cv::Mat mx_Array_Image2_Mat(const mxArray *inputMatrix)
     // with multi-channels mat. Multi-dims case is handled above.
     std::vector<int> d(dims, dims+ndims);
     ndims = (d.size()>2) ? d.size()-1 : d.size();
+
     const mwSize nchannels = (d.size()>2) ? d.back() : 1;
     int depth = CV_8U;
     std::swap(d[0], d[1]);
@@ -139,6 +104,23 @@ cv::Mat double_mxArray_matrix2cv_Mat_matrix(const mxArray *inputMatrix)
 }
 
 
+/*
+ * Used to detect the pixel locations for each corner of each ArUco marker.
+*/
+cv::Mat DetectArucoMarkerPixel(cv::Mat &image, std::vector<int> &markerIds, std::vector<std::vector<cv::Point2f> > &markerCorners)
+{
+    cv::Mat imageCopy;
+    image.copyTo(imageCopy);
+
+    cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
+
+    cv::aruco::detectMarkers(image, dictionary, markerCorners, markerIds);
+
+    if (markerIds.size() > 0)
+        cv::aruco::drawDetectedMarkers(imageCopy, markerCorners, markerIds);
+
+    return imageCopy;
+}
 
 
 /*
@@ -187,79 +169,52 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
     if (inImgMat.empty())
         mexErrMsgTxt("Could not read in image to opencv MAT type");
 
-    //**************2ND INPUT**************************
+    std::vector<int> markerIds;
+    std::vector<std::vector<cv::Point2f> > markerCorners;
 
-    const cv::Mat intrMatrix = double_mxArray_matrix2cv_Mat_matrix(prhs[1]);
-
-    //**************3RD INPUT**************************
-
-    const cv::Mat distCoef = double_mxArray_matrix2cv_Mat_matrix(prhs[2]);
-
-    //**************4TH INPUT**************************
-
-    const int numSquaresX = (int)mxGetScalar(prhs[3]);
-
-    //    //**************5TH INPUT**************************
-
-    const int numSquaresY = (int)mxGetScalar(prhs[4]);
-
-    //    //**************6TH INPUT**************************
-
-    const double checkerSideLength = (double)mxGetScalar(prhs[5]);
-
-    //    //**************7TH INPUT**************************
-
-    const double arucoSideLength = (double)mxGetScalar(prhs[6]);
-
-    //Run the Charuco Pose estimation function
-    cv::Vec3d rvec, tvec;
-
-    //Copy passed in image
-    cv::Mat imgWithPose;
-    inImgMat.copyTo(imgWithPose);
-
-    //get the pose of the board from the function
-    bool foundPose = EstimateCharucoPose(inImgMat, intrMatrix, distCoef, rvec, tvec, imgWithPose, numSquaresX, numSquaresY, checkerSideLength, arucoSideLength);
-
-    //Convert from Rodrigues vector to rotation matrix
-    cv::Mat rotMat;
-    cv::Rodrigues(rvec,rotMat);
+    //detect all possible markers
+    cv::Mat imgMarkerDet = DetectArucoMarkerPixel(inImgMat, markerIds, markerCorners);
 
 
     //**************1ST OUTPUT**************************
 
-    plhs[0] = mxCreateDoubleMatrix(3,3, mxREAL);
+    int rows = markerIds.size();
 
-    double* pr = mxGetPr(plhs[0]);
+    plhs[0] = mxCreateNumericMatrix(rows, 1, mxINT8_CLASS, mxREAL);
+
+    mxInt8* pr = mxGetInt8s(plhs[0]);
+
+    for (int i = 0; i < rows; i++)
+        *(pr+i) = markerIds[i];
+
+    //**************SECOND OUTPUT**************************
+
+    rows = markerCorners.size();
+
+    plhs[1] = mxCreateDoubleMatrix(rows, 8, mxREAL);
+
+    double* pr1 = mxGetPr(plhs[1]);
 
     int arrIndex = 0;
 
-    for (int i = 0; i < 3; i++){
-        for (int j = 0; j < 3; j++){
-            *(pr+arrIndex) = rotMat.at<double>(j,i);
+    for (int i = 0; i < 4; i++){
+        arrIndex = 0;
+
+        for (int j = 0; j < rows; j++){
+            cv::Point2f curCorner = markerCorners[j][i];
+
+            pr1[arrIndex + 2*i*rows] = curCorner.x;
+            pr1[arrIndex + (2*i +1)*rows] = curCorner.y;
             arrIndex++;
         }
     }
 
-    //**************SECOND OUTPUT**************************
-
-    plhs[1] = mxCreateDoubleMatrix(1,3, mxREAL);
-
-    pr = mxGetPr(plhs[1]);
-
-    for (int i = 0; i < 3; i++)
-        *(pr+i) = tvec[i];
-
-    //**************THIRD OUTPUT**************************
-
-    plhs[2] = mxCreateLogicalScalar(foundPose);
-
-    //**************FOURTH OUTPUT************************** [OPTIONAL]
+    //**************THIRD OUTPUT************************** [OPTIONAL]
 
     if (nlhs == NUM_OUTPUTS_MAT+1) {
-        plhs[3] = mxCreateNumericArray(numImgDim,inImgDim, mxUINT8_CLASS, mxREAL);
+        plhs[2] = mxCreateNumericArray(numImgDim,inImgDim, mxUINT8_CLASS, mxREAL);
 
-        char* outMat = (char*) mxGetData(plhs[3]);
+        char* outMat = (char*) mxGetData(plhs[2]);
 
         // grayscale image
         if (numImgDim == 2){
@@ -268,7 +223,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
             //Store image pixel channel colours into a 1D array used for passing to matlab
             for (int j = 0; j < inImgW; j++){
                 for (int i = 0; i < inImgH; i++){
-                    outMat[arrIndex] = imgWithPose.at<char>(i,j);
+                    outMat[arrIndex] = imgMarkerDet.at<char>(i,j);
 
                     arrIndex++;
                 }
@@ -282,7 +237,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
             //Store image pixel channel colours into a 1D array used for passing to matlab
             for (int j = 0; j < inImgW; j++){
                 for (int i = 0; i < inImgH; i++){
-                    pixel = imgWithPose.at<cv::Vec3b>(i,j);
+                    pixel = imgMarkerDet.at<cv::Vec3b>(i,j);
 
                     outMat[arrIndex] = pixel[2];   //R
                     outMat[inImgH*inImgW+arrIndex] = pixel[1]; //G
