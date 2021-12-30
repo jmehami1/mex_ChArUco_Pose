@@ -5,18 +5,18 @@
 clear;
 close all;
 
-%mex function should be in the bin folder
+%MEX function should be in the bin folder
 if exist("bin", "dir")
     addpath("bin");
 else
-    error("mex file not built");
+    error("mex function not built");
 end
 
 %robotics toolbox for visualising
 run(['rvctools' filesep 'startup_rvc.m']);
 
 %test image
-img = imread(['Images', filesep,'patexample.png']);
+img = imread(['Images', filesep,'charuco_test.png']);
 
 %camera parameters
 intrMat = [532.568131996427,0,0;0,531.905416600879,0;327.499527166381,231.227840418968,1]; %intrinsic matrix for opencv format
@@ -27,8 +27,8 @@ distCoefCV = [distRad(1:2), distTan, distRad(3)]; %array of distortion coefficie
 %ChArUco pattern size
 xNumCheck = 8;
 yNumCheck = 6;
-checkSize = 0.04;
-arucoSize = 0.03;
+checkSize = 0.04; %side length in metres
+arucoSize = 0.03; %side length in metres
 
 figure('Name', 'Before');
 imshow(img);

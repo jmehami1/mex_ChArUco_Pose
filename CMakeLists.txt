@@ -2,8 +2,14 @@ cmake_minimum_required(VERSION 3.10)
 
 project(charuco_pose_est)
 
+find_package( OpenCV 4.0 REQUIRED
+    PATHS / )
+
+if ( NOT OpenCV_FOUND )
+    message( FATAL_ERROR "Could NOT find OpenCV version 4.0 or higher" )
+endif ()
+
 find_package( Matlab COMPONENTS MX_LIBRARY )
-find_package( OpenCV REQUIRED )
 
 if (Matlab_FOUND)
     message(STATUS "MATLAB root directory found: ${Matlab_ROOT_DIR}.")

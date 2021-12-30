@@ -9,14 +9,14 @@ close all;
 if exist("bin", "dir")
     addpath("bin");
 else
-    error("mex file not built");
+    error("mex function not built");
 end
 
 %robotics toolbox for visualising
 run(['rvctools' filesep 'startup_rvc.m']);
 
 %test image
-img = imread(['Images', filesep,'aruco_example.png']);
+img = imread(['Images', filesep,'aruco_test.png']);
 
 %camera parameters
 intrMat = [532.568131996427,0,0;0,531.905416600879,0;327.499527166381,231.227840418968,1]; %intrinsic matrix for opencv format
@@ -146,13 +146,14 @@ ext = [rotMat,trans'; 0, 0, 0, 1];
 
 trplot(ext, 'frame', 'Pat', 'rviz', 'length', 0.1); hold on;
 
-% bl = [0, 0, 0, 1];
-% br = [xNumCheck*checkSize, 0, 0, 1];
-% tl = [0, yNumCheck*checkSize, 0, 1];
-% tr = [xNumCheck*checkSize, yNumCheck*checkSize, 0, 1];
+bl = [0, 0, 0, 1];
+br = [xNumMarker*arucoLen + (xNumMarker-1)*sepLen, 0, 0,  1];
+tl = [0, yNumMarker*arucoLen + (yNumMarker-1)*sepLen, 0,  1];
+tr = [xNumMarker*arucoLen + (xNumMarker-1)*sepLen, yNumMarker*arucoLen + (yNumMarker-1)*sepLen, 0,  1];
+coor = ext*([bl ; br; tr; tl ]') ;
+fill3(coor(1,:),coor(2,:),coor(3,:),'b', 'FaceAlpha', 0.5)
 
 coor = ext*[markerPatPts'; ones(1, numMarkers*4)];
-
 plot3(coor(1,:),coor(2,:),coor(3,:),'r*')
 
 axis equal; grid on;
