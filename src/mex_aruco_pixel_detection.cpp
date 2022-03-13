@@ -1,12 +1,8 @@
 #include <string>
 //#include <iostream>
 #include <opencv2/aruco.hpp>
-//#include <opencv2/highgui.hpp>
-//#include <opencv2/core.hpp>
-//#include <opencv2/imgproc/imgproc.hpp>
 #include "mex.h"
 #include <vector>
-//#include <map>
 
 #include "helper_functions.h"
 
@@ -19,7 +15,6 @@
 */
 cv::Mat DetectArucoMarkerPixel(cv::Mat &image, std::vector<int> &markerIds, std::vector<std::vector<cv::Point2f> > &markerCorners)
 {
-//    std::cout << "ENTERING PIXEL DETECTION" << std::endl;
     cv::Mat imageCopy;
     image.copyTo(imageCopy);
 
@@ -92,10 +87,13 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 
     plhs[0] = mxCreateNumericMatrix(rows, 1, mxINT8_CLASS, mxREAL);
 
+
+//    IntVector2mxIntRowArray(plhs[0], markerIds);
+
     mxInt8* pr = mxGetInt8s(plhs[0]);
 
     for (int i = 0; i < rows; i++)
-        *(pr+i) = markerIds[i];
+        *(pr+i) = markerIds.at(i);
 
     //**************SECOND OUTPUT**************************
 

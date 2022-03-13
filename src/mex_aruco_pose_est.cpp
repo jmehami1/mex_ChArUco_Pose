@@ -9,6 +9,7 @@
 #include <vector>
 #include <map>
 
+
 #include "helper_functions.h"
 
 #define NUM_INPUTS_MAT 7
@@ -52,16 +53,14 @@ bool EstimateCharucoPose(cv::Mat &image, const cv::Mat &cameraMatrix, const cv::
 
 
 /*
- * Mex file which interfaces the Charuco code from opencv to allow it to be run in Matlab.
+ * Mex function which interfaces the ArUco code from opencv to allow it to be run in Matlab.
  * Inputs prhs[]:
  * [0] - uint8 input image (rows x cols x channels)
  * [1] - double camera intrinsic matrix [fx, 0, u0;
  *                                      0, fy, v0;
  *                                      0, 0, 1]
  * [2] - double camera distortion coefficients [K1, K2, P1, P2, K3]
- * [3] - uint8 [Number of squares in the X direction (Horizontal), Number of squares in the Y direction (vertical)]
- * [5] - double side length of checkerboard markers (metres)
- * [6] - double side length of Aruco marker (metres)
+ * [3] - string name of ArUco board parameter YAML file
  *
  *SQUARES_X, SQUARES_Y, SQUARE_LENGTH, MARKER_LENGTH
  * Outputs plhs[]:
@@ -104,22 +103,24 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
     //**************3RD INPUT**************************
 
     const cv::Mat distCoef = double_mxArray_matrix2cv_Mat_matrix(prhs[2]);
+    const std::string arucoParamYAML = mxArrayToString(prhs[3]);
 
     //**************4TH INPUT**************************
 
-    const int numSquaresX = (int)mxGetScalar(prhs[3]);
+    const std::string arucoParamYAML = mxArrayToString(prhs[3]);
 
-    //    //**************5TH INPUT**************************
 
-    const int numSquaresY = (int)mxGetScalar(prhs[4]);
+//    //    //**************5TH INPUT**************************
 
-    //    //**************6TH INPUT**************************
+//    const int numSquaresY = (int)mxGetScalar(prhs[4]);
 
-    const double checkerSideLength = (double)mxGetScalar(prhs[5]);
+//    //    //**************6TH INPUT**************************
 
-    //    //**************7TH INPUT**************************
+//    const double checkerSideLength = (double)mxGetScalar(prhs[5]);
 
-    const double arucoSideLength = (double)mxGetScalar(prhs[6]);
+//    //    //**************7TH INPUT**************************
+
+//    const double arucoSideLength = (double)mxGetScalar(prhs[6]);
 
     //Run the Charuco Pose estimation function
     cv::Vec3d rvec, tvec;

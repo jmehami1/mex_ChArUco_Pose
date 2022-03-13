@@ -5,17 +5,17 @@
 The MATLAB MEX function for getting the pose of a ChArUco board from the native OpenCV implementation in C++. Link to relevant OpenCV documentation can be found [here](https://docs.opencv.org/4.5.5/df/d4a/tutorial_charuco_detection.html).
 
 
-
 **ArucoPixDect.mexa64**
 
-There is also a MATLAB MEX function for getting the identified markers of a ArUco board in pixel coordinates from the native OpenCV implementation in C++. This does NOT estimate the pose of an ArUco board. The pose can be estimated using Perspective-n-Point algorithms such as [IPPE](https://au.mathworks.com/matlabcentral/fileexchange/56571-tobycollins-ippe).
+The MATLAB MEX function for getting the identified markers of a ArUco board in pixel coordinates from the native OpenCV implementation in C++. This does **NOT** estimate the pose of an ArUco board. The pose can be estimated using Perspective-n-Point algorithms such as [IPPE](https://au.mathworks.com/matlabcentral/fileexchange/56571-tobycollins-ippe).
 
 The MEX functions should be located in the `bin` directory with a  `.mexa64` file type (assuming if built on x64 Linux OS). There are included MATLAB test scripts to check if the functions work.
 
 ## Requirements
 
 - MATLAB (Tested with 2020b)
-- OpenCV 4.0 or higher 
+- OpenCV 4.0 or higher
+- The ArUco markers **must** have a surrounding white border to be detected
 
 ## Building Mex Functions
 
@@ -73,7 +73,7 @@ This MEX function identifies the markers that are present in the passed in image
 | ------------ | ------------------------------------------------------------ |
 | ids          | Detected marker IDs from image                               |
 | markerCorner | The pixel coordinates of the corners for each of the detected marker IDs |
-| imageOut     | Copy of input image with drawn detected markers and their IDs |
+| imageOut     | Copy of input image with drawn detected markers and their IDs, and any rejected markers |
 
 Check the test script for further information on how to use the function. Test image of a custom 5x8 ArUco board with 4x4 ArUco dictionary is shown below. Note that the missing markers are not included as apart of the setup of the board. 
 
@@ -94,3 +94,7 @@ The extrinsic or the pose of the board w.r.t to the camera's coordinate frame is
 
 <img align="center" src="Images/aruco_plotpose.png" alt="Estimated pose of board or extrinsic" width="40%" />
 
+
+
+## TODO
+- Complete the ArUco board pose estimation using PnP algorithm built into OpenCV

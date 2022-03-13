@@ -1,14 +1,4 @@
-#include <string>
-#include <iostream>
-#include <opencv2/aruco/charuco.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/core.hpp>
-#include <opencv2/calib3d/calib3d.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include "mex.h"
-#include <vector>
-#include <map>
-
+#include "helper_functions.h"
 
 //Helper function for used in mx_Array_Image2_Mat
 mwIndex subs(const mxArray *inputMatrix, const std::vector<mwIndex>& si)
@@ -20,10 +10,10 @@ mwIndex subs(const mxArray *inputMatrix, const std::vector<mwIndex>& si)
 cv::Mat mx_Array_Image2_Mat(const mxArray *inputMatrix)
 {
 
-//    uint8_T *inImgArr = mxGetUint8s(inputMatrix);
+    //    uint8_T *inImgArr = mxGetUint8s(inputMatrix);
     const mwSize *dims = mxGetDimensions(inputMatrix);
     mwSize ndims = mxGetNumberOfDimensions(inputMatrix);
-//    const mxClassID classID = mxGetClassID(inputMatrix);
+    //    const mxClassID classID = mxGetClassID(inputMatrix);
 
     // Create cv::Mat object (of the specified depth), equivalent to mxArray.
     // At this point we create either a 2-dim with 1-channel mat, or a 2-dim
@@ -97,3 +87,27 @@ cv::Mat double_mxArray_matrix2cv_Mat_matrix(const mxArray *inputMatrix)
     //cast cv::_Mat to cv::Mat
     return ((cv::Mat) M);
 }
+
+//void IntVector2mxIntRowArray(mxArray *mxRowArr, std::vector<int> inVec)
+//{
+//    int rows = inVec.size();
+
+//    mxRowArr = mxCreateNumericMatrix(rows, 1, mxINT8_CLASS, mxREAL);
+
+//    mxInt8* pr = mxGetInt8s(mxRowArr);
+
+//    for (int i = 0; i < rows; i++)
+//        *(pr+i) = inVec[i];
+
+//    pr = NULL;
+//}
+
+/*
+ * Read the ArUco board parameters from a yaml file. This file should contain the IDs present on the board and their respective corners.
+ *
+ */
+//bool Read_ArUco_YAML(const std::string fileName, cv::Ptr<cv::aruco::Dictionary> dictionary, std::vector<int> ids, std::vector<std::vector<cv::Point3f>>objPoints)
+//{
+//    YAML::Node yanlReader = YAML::LoadFile(fileName);
+
+//}

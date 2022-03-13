@@ -96,10 +96,10 @@ axis equal;
 figB = figure('Name', 'Before');
 imshow(img);
 
-imgGray = im2gray(img);
+% imgGray = im2gray(img);
 
 
-[ids, markerCorner, imgOut] = ArucoPixDect(imgGray);
+[ids, markerCorner, imgOut] = ArucoPixDect(img);
 
 
 figure('Name', 'After');
