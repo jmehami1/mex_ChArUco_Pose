@@ -1,13 +1,8 @@
-#include <string>
 //#include <iostream>
 #include <opencv2/aruco/charuco.hpp>
-//#include <opencv2/highgui.hpp>
-//#include <opencv2/core.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
-//#include <opencv2/imgproc/imgproc.hpp>
 #include "mex.h"
 #include <vector>
-//#include <map>
 
 #include "helper_functions.h"
 
@@ -19,7 +14,7 @@
  *
 */
 bool EstimateCharucoPose(cv::Mat &image, const cv::Mat &cameraMatrix, const cv::Mat &distCoeffs,cv::Vec3d &rvec, cv::Vec3d &tvec, cv::Mat &imageCopy,
-                         const int numSquaresX, const int numSquaresY, const double checkerSideLength, const double arucoSideLength)
+                         uint &numDetectedMarkerPts, const int numSquaresX, const int numSquaresY, const double checkerSideLength, const double arucoSideLength)
 {
     cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_4X4_50);
     cv::Ptr<cv::aruco::CharucoBoard> board = cv::aruco::CharucoBoard::create(numSquaresX, numSquaresY, checkerSideLength, arucoSideLength, dictionary);
@@ -35,16 +30,18 @@ bool EstimateCharucoPose(cv::Mat &image, const cv::Mat &cameraMatrix, const cv::
         std::vector<cv::Point2f> charucoCorners;
         std::vector<int> charucoIds;
         cv::aruco::interpolateCornersCharuco(markerCorners, markerIds, image, board, charucoCorners, charucoIds, cameraMatrix, distCoeffs);
-        // if at least one charuco corner detected
-        if (charucoIds.size() > 0){
-            // if charuco pose is valid
-            if (cv::aruco::estimatePoseCharucoBoard(charucoCorners, charucoIds, board, cameraMatrix, distCoeffs, rvec, tvec)){
-                cv::aruco::drawDetectedMarkers(imageCopy, markerCorners, markerIds);
-                cv::aruco::drawDetectedCornersCharuco(imageCopy, charucoCorners, charucoIds, cv::Scalar(255, 0, 0));
-                cv::aruco::drawAxis(imageCopy, cameraMatrix, distCoeffs, rvec, tvec, 0.1f);
-                return true;
-            }
+
+        //get number of detected charuco board points
+        numDetectedMarkerPts = (uint) charucoIds.size();
+
+        // if charuco pose is valid
+        if (cv::aruco::estimatePoseCharucoBoard(charucoCorners, charucoIds, board, cameraMatrix, distCoeffs, rvec, tvec)){
+            cv::aruco::drawDetectedMarkers(imageCopy, markerCorners, markerIds);
+            cv::aruco::drawDetectedCornersCharuco(imageCopy, charucoCorners, charucoIds, cv::Scalar(255, 0, 0));
+            cv::aruco::drawAxis(imageCopy, cameraMatrix, distCoeffs, rvec, tvec, 0.1f);
+            return true;
         }
+
     }
 
     return false;
@@ -68,7 +65,9 @@ bool EstimateCharucoPose(cv::Mat &image, const cv::Mat &cameraMatrix, const cv::
  * [0] - mxDouble rotation matrix [3 x 3]
  * [1] - mxDouble translation vector [tx, ty, tz]
  * [2] - mxLogical found pose of board
+ *  OPTIONAL
  * [3] - uint8 output image with drawn on axes only if board is found (rows x cols x channels)
+ * [4] - uint8 number of detected marker points (points actually used to estimate pose)
 */
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
@@ -80,7 +79,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 
 
     //check for proper number of output arguments
-    if (nlhs != NUM_OUTPUTS_MAT && nlhs != NUM_OUTPUTS_MAT+1)
+    if (nlhs < NUM_OUTPUTS_MAT )
         mexErrMsgTxt("incorrect output arguments");
 
     //**************1ST INPUT**************************
@@ -128,79 +127,60 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
     cv::Mat imgWithPose;
     inImgMat.copyTo(imgWithPose);
 
+    uint numDetectedMarkerPts;
+
     //get the pose of the board from the function
-    bool foundPose = EstimateCharucoPose(inImgMat, intrMatrix, distCoef, rvec, tvec, imgWithPose, numSquaresX, numSquaresY, checkerSideLength, arucoSideLength);
+    bool foundPose = EstimateCharucoPose(inImgMat, intrMatrix, distCoef, rvec, tvec, imgWithPose, numDetectedMarkerPts, numSquaresX, numSquaresY, checkerSideLength, arucoSideLength);
 
     //Convert from Rodrigues vector to rotation matrix
     cv::Mat rotMat;
     cv::Rodrigues(rvec,rotMat);
 
-
-    //**************1ST OUTPUT**************************
+    //**************1st OUTPUT**************************
 
     plhs[0] = mxCreateDoubleMatrix(3,3, mxREAL);
 
-    double* pr = mxGetPr(plhs[0]);
+    double* prDouble = mxGetDoubles(plhs[0]);
 
     int arrIndex = 0;
 
     for (int i = 0; i < 3; i++){
         for (int j = 0; j < 3; j++){
-            *(pr+arrIndex) = rotMat.at<double>(j,i);
+            *(prDouble+arrIndex) = rotMat.at<double>(j,i);
             arrIndex++;
         }
     }
 
-    //**************SECOND OUTPUT**************************
+    //**************2nd OUTPUT**************************
 
     plhs[1] = mxCreateDoubleMatrix(1,3, mxREAL);
 
-    pr = mxGetPr(plhs[1]);
+    prDouble = mxGetDoubles(plhs[1]);
 
     for (int i = 0; i < 3; i++)
-        *(pr+i) = tvec[i];
+        *(prDouble+i) = tvec[i];
 
-    //**************THIRD OUTPUT**************************
+    //**************3rd OUTPUT**************************
 
     plhs[2] = mxCreateLogicalScalar(foundPose);
 
-    //**************FOURTH OUTPUT************************** [OPTIONAL]
+    //**************4th OUTPUT************************** [OPTIONAL]
 
-    if (nlhs == NUM_OUTPUTS_MAT+1) {
+    if (nlhs >= NUM_OUTPUTS_MAT+1) {
         plhs[3] = mxCreateNumericArray(numImgDim,inImgDim, mxUINT8_CLASS, mxREAL);
 
-        char* outMat = (char*) mxGetData(plhs[3]);
+        uchar* prUchar = (uchar*) mxGetUint8s(plhs[3]);
 
-        // grayscale image
-        if (numImgDim == 2){
-            arrIndex = 0;
-
-            //Store image pixel channel colours into a 1D array used for passing to matlab
-            for (int j = 0; j < inImgW; j++){
-                for (int i = 0; i < inImgH; i++){
-                    outMat[arrIndex] = imgWithPose.at<char>(i,j);
-
-                    arrIndex++;
-                }
-            }
-        }
-        //RGB image
-        else {
-            cv::Vec3b pixel;
-            arrIndex = 0;
-
-            //Store image pixel channel colours into a 1D array used for passing to matlab
-            for (int j = 0; j < inImgW; j++){
-                for (int i = 0; i < inImgH; i++){
-                    pixel = imgWithPose.at<cv::Vec3b>(i,j);
-
-                    outMat[arrIndex] = pixel[2];   //R
-                    outMat[inImgH*inImgW+arrIndex] = pixel[1]; //G
-                    outMat[2*inImgH*inImgW+arrIndex] = pixel[0]; //B
-
-                    arrIndex++;
-                }
-            }
-        }
+        Mat_Img_2_mxUint8_img(imgWithPose, prUchar, numImgDim, inImgW, inImgH);
     }
+
+    //**************5th OUTPUT************************** [OPTIONAL]
+
+    if (nlhs >= NUM_OUTPUTS_MAT+2) {
+
+        plhs[4] = mxCreateNumericMatrix(1,1,mxUINT8_CLASS,mxREAL);
+        uint* prUint8 = (uint*)mxGetUint8s(plhs[4]);
+        *prUint8 = numDetectedMarkerPts;
+    }
+
 }

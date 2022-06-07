@@ -1,4 +1,3 @@
-#include <string>
 //#include <iostream>
 #include <opencv2/aruco.hpp>
 #include "mex.h"
@@ -30,7 +29,7 @@ cv::Mat DetectArucoMarkerPixel(cv::Mat &image, std::vector<int> &markerIds, std:
         cv::aruco::drawDetectedMarkers(imageCopy, markerCorners, markerIds);
 
     if (rejectedCorners.size() > 0)
-//        std::cout << "number of rejected markers is " << std::to_string(rejectedCorners.size()) << std::endl;
+        //        std::cout << "number of rejected markers is " << std::to_string(rejectedCorners.size()) << std::endl;
         cv::aruco::drawDetectedMarkers(imageCopy, rejectedCorners, cv::noArray(), cv::Scalar(255,0,0));
 
     return imageCopy;
@@ -57,7 +56,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 
 
     //check for proper number of output arguments
-    if (nlhs != NUM_OUTPUTS_MAT && nlhs != NUM_OUTPUTS_MAT+1)
+    if (nlhs < NUM_OUTPUTS_MAT)
         mexErrMsgTxt("incorrect output arguments");
 
     //**************1ST INPUT**************************
@@ -87,9 +86,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 
     plhs[0] = mxCreateNumericMatrix(rows, 1, mxINT8_CLASS, mxREAL);
 
-
-//    IntVector2mxIntRowArray(plhs[0], markerIds);
-
     mxInt8* pr = mxGetInt8s(plhs[0]);
 
     for (int i = 0; i < rows; i++)
@@ -101,7 +97,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 
     plhs[1] = mxCreateDoubleMatrix(rows, 8, mxREAL);
 
-    double* pr1 = mxGetPr(plhs[1]);
+    double* pr1 = mxGetDoubles(plhs[1]);
 
     int arrIndex = 0;
 
@@ -122,38 +118,9 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
     if (nlhs == NUM_OUTPUTS_MAT+1) {
         plhs[2] = mxCreateNumericArray(numImgDim,inImgDim, mxUINT8_CLASS, mxREAL);
 
-        char* outMat = (char*) mxGetData(plhs[2]);
+        uchar* prUchar = (uchar*) mxGetData(plhs[2]);
 
-        // grayscale image
-        if (numImgDim == 2){
-            arrIndex = 0;
+        Mat_Img_2_mxUint8_img(imgMarkerDet, prUchar, numImgDim, inImgW, inImgH);
 
-            //Store image pixel channel colours into a 1D array used for passing to matlab
-            for (int j = 0; j < inImgW; j++){
-                for (int i = 0; i < inImgH; i++){
-                    outMat[arrIndex] = imgMarkerDet.at<char>(i,j);
-
-                    arrIndex++;
-                }
-            }
-        }
-        //RGB image
-        else {
-            cv::Vec3b pixel;
-            arrIndex = 0;
-
-            //Store image pixel channel colours into a 1D array used for passing to matlab
-            for (int j = 0; j < inImgW; j++){
-                for (int i = 0; i < inImgH; i++){
-                    pixel = imgMarkerDet.at<cv::Vec3b>(i,j);
-
-                    outMat[arrIndex] = pixel[2];   //R
-                    outMat[inImgH*inImgW+arrIndex] = pixel[1]; //G
-                    outMat[2*inImgH*inImgW+arrIndex] = pixel[0]; //B
-
-                    arrIndex++;
-                }
-            }
-        }
     }
 }
