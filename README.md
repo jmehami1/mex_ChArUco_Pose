@@ -13,9 +13,10 @@ The MEX functions should be located in the `bin` directory with a  `.mexa64` fil
 
 ## Requirements
 
-- MATLAB (Tested with 2020b)
+- MATLAB 2018a or higher (Tested with 2021b)
+- GCC 7.0 or higher (Tested with 7.5.0)
 - OpenCV 4.0 or higher
-- The ArUco markers **must** have a surrounding white border to be detected
+- The markers **must** have a surrounding white border to be detected
 
 ## Building Mex Functions
 
@@ -35,15 +36,16 @@ The built MEX functions can be found in the  `bin`  directory.
 Run the MEX function in MATLAB as follows:
 
 ```matlab
-[rotMat, trans, found, imageOut] = CharucoPosEst(image, intrinsicMatrix, distCoefCV, numOfCols, numOfRows, checkerSideLen, arucoSideLen);
+[rotMat, trans, found, imageOut, numDetectedMarkPts] = CharucoPosEst(image, intrinsicMatrix, distCoefCV, numOfCols, numOfRows, checkerSideLen, arucoSideLen);
 ```
 
-| Output   | Description                                                  |
-| -------- | ------------------------------------------------------------ |
-| rotMat   | Estimated 3x3 rotation matrix of extrinsic pose or pose of the board w.r.t to the camera's coordinate frame. |
-| trans    | Estimated 1x3 translation vector of extrinsic pose or pose of the board w.r.t to the camera's coordinate frame. |
-| found    | true/false if the pose of the board could be estimated from the image |
-| imageOut | Copy of input image with drawn 3D axis, detected markers and their IDs |
+| Output             | Description                                                  |
+| ------------------ | ------------------------------------------------------------ |
+| rotMat             | Estimated 3x3 rotation matrix of extrinsic pose or pose of the board w.r.t to the camera's coordinate frame. |
+| trans              | Estimated 1x3 translation vector of extrinsic pose or pose of the board w.r.t to the camera's coordinate frame. |
+| found              | true/false if the pose of the board could be estimated from the image |
+| imageOut           | Copy of input image with drawn 3D axis, detected markers and their IDs |
+| numDetectedMarkPts | Number of detected marker points used to estimate pose       |
 
 Check the test script for further information on how to use the function. Test image of 6x8 ChArUco board with 4x4 ArUco dictionary is shown below. Note that centre of board is covered to highlight advantages of ArUco marker board.
 

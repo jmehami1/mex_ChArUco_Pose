@@ -34,7 +34,7 @@ figure('Name', 'Before');
 imshow(img);
 
 %mex function for getting pose of the pattern
-[rotMat, trans, found, imgOut] = CharucoPosEst(img, intrMat, distCoefCV, xNumCheck, yNumCheck, checkSize, arucoSize);
+[rotMat, trans, found, imgOut, numDetectedMarkers] = CharucoPosEst(img, intrMat, distCoefCV, xNumCheck, yNumCheck, checkSize, arucoSize);
 
 figure('Name', 'After');
 imshow(imgOut);
@@ -63,5 +63,7 @@ if found
     xlabel("tx (m)");
     ylabel("ty (m)");
     zlabel("tz (m)");
+
+    fprintf("Number of detected markers: %i\n", numDetectedMarkers);
     
 end
