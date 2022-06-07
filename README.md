@@ -85,12 +85,10 @@ Check the test script for further information on how to use the function. Test i
 
 Origin is located in the bottom-left corner of the bottom-left marker as shown. Note that the board in test image is not rigid so that is why the axis is off. The extrinsic pose of the camera, the pose of the board in the coordinate frame of the camera, is shown in the right image.
 
-<p float="left">
-	<img align="left" src="Images/aruco_detectedmarkers.png" alt="ArUco pattern with detected marker IDs" width="50%" /> 
-	<img align="right" src="Images/aruco_detectedcorners.png" alt="Detected marker corner pixels" width="50%" />
+<p float="middle">
+	<img align="top" src="Images/aruco_detectedmarkers.png" alt="ArUco pattern with detected marker IDs" width="49%" /> 
+	<img align="top" src="Images/aruco_detectedcorners.png" alt="Detected marker corner pixels" width="49%" />
 </p><br clear="left">
-
-
 
 The extrinsic or the pose of the board w.r.t to the camera's coordinate frame is found using the `extrinsics` function built into MATLAB's computer vision toolbox. Note that this function is not robust as it estimates the pose in a linear manner using SVD. Use [IPPE](https://au.mathworks.com/matlabcentral/fileexchange/56571-tobycollins-ippe) instead which estimates the extrinsic through optimisation of reprojection error.
 
