@@ -13,13 +13,13 @@ else
 end
 
 %robotics toolbox for visualising
-run(['rvctools' filesep 'startup_rvc.m']);
+run(fullfile('ext_lib', 'rvctools', 'startup_rvc.m'));
 
 %test image
-img = imread(['Images', filesep,'aruco_test.png']);
+img = imread(fullfile('Images', 'aruco_test.png'));
 
 
-%camera parameters
+%% camera parameters
 intrMat = [532.568131996427,0,0;0,531.905416600879,0;327.499527166381,231.227840418968,1]; %intrinsic matrix for opencv format
 distRad = [0.0346875042867809,-0.0917743770901257,-0.0897944587524139];
 distTan = [-0.00415109739624088,0.00571543700759848];
@@ -28,13 +28,13 @@ distCoefCV = [distRad(1:2), distTan, distRad(3)]; %array of distortion coefficie
 
 camParam = cameraParameters('IntrinsicMatrix', intrMat, 'ImageSize', size(img, [1,2]), ...
     'RadialDistortion', distRad, 'TangentialDistortion', distTan);
-%% Get pattern points of Aruco board
+%% create 3D pattern points of Aruco board in world coordinates
 
 %ChArUco pattern size
 xNumMarker = 8;
 yNumMarker = 5;
-arucoLen = 0.04;
-sepLen = 0.01;
+arucoLen = 0.04; %metres
+sepLen = 0.01; %metres
 
 markerCornerCell = cell(yNumMarker*xNumMarker, 1);
 ind = 0;
@@ -56,10 +56,10 @@ for i = 1:yNumMarker
         y_bl = (yNumMarker - i)*arucoLen + (yNumMarker - i)*sepLen;
         
         markerCorner = [
-            x_tl, y_tl, 0;
-            x_tr, y_tr, 0;
-            x_br, y_br, 0;
-            x_bl, y_bl, 0;
+            x_tl, y_tl;
+            x_tr, y_tr;
+            x_br, y_br;
+            x_bl, y_bl;
             ];
         
         markerIDs(ind + 1) = ind;
@@ -70,35 +70,31 @@ end
 
 % remove the markers that do not exist on the board
 for i = 18:2:23
-    markerCornerCell(i:i+5) = [];
+%     markerCornerCell(i:i+5) = [];
     markerIDs(i:i+5) = [];
 end
 
 numMarkers = length(markerIDs);
 markerPatPts = zeros(numMarkers*4, 3);
 
-figure(1);
-
+figure('Name','Aruco board markers');
 
 for i = 1:numMarkers
-    curCorner =  markerCornerCell{i};
-    
+    curCorner =  markerCornerCell{markerIDs(i)+1}; 
     plot([curCorner(:,1); curCorner(1,1)], [curCorner(:,2); curCorner(1,2)], 'b-'); hold on;
-    
-    markerPatPts((i-1)*4 + 1: 4*i, :) = curCorner;
+    markerPatPts((i-1)*4 + 1: 4*i, 1:2) = curCorner;
 end
 
 grid on;
 axis equal;
+xlabel("x (m)");
+ylabel("y (m)");
 
 
-
+%% Aruco board detection and pose estimation
 
 figB = figure('Name', 'Before');
 imshow(img);
-
-img = im2gray(img);
-
 
 [ids, markerCorner, imgOut] = ArucoPixDect(img);
 
@@ -136,6 +132,11 @@ end
 
 
 [rotMat, trans] = extrinsics(markerImgPts, markerPatPts(:, 1:2), camParam);
+data = [trans, rad2deg(rotm2eul(rotMat, 'ZYX'))];
+poseTable = array2table(data, 'VariableNames', {'tx (m)', 'ty (m)', 'tz (m)', 'Rz (DEG)', 'Ry (DEG)', 'Rx (DEG)'});
+disp(" ");
+disp("MATLAB built-in extrinsic function");
+disp(poseTable);
 
 
 patFig = figure('Name', 'Pose of pattern');
@@ -161,4 +162,14 @@ axis equal; grid on;
 xlabel("tx (m)");
 ylabel("ty (m)");
 zlabel("tz (m)");
+
+
+%% Pose estimation using IPPE
+
+[rotMat, trans] = ArucoPosEst(img, markerCornerCell, camParam);
+data = [trans, rad2deg(rotm2eul(rotMat, 'ZYX'))];
+poseTable = array2table(data, 'VariableNames', {'tx (m)', 'ty (m)', 'tz (m)', 'Rz (DEG)', 'Ry (DEG)', 'Rx (DEG)'});
+disp(" ");
+disp("IPPE");
+disp(poseTable);
 
