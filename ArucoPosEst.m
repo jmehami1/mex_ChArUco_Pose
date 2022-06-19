@@ -1,6 +1,6 @@
 function [rotMat, trans, found, imgOut] = ArucoPosEst(img, markerCornerCell, cameraParams, doUndistortion)
 % Estimate the extrinsic pose of a ArUco planar board w.r.t to a frame
-% camera (Transformation from world coordinates to camera coordinates). 
+% camera (Transformation from world coordinates to camera coordinates).
 % This Aruco board can work under occluded or missing markers.
 % This function the IPPE pose estimation.
 % INPUTS:
@@ -27,6 +27,7 @@ arguments
     doUndistortion = true
 end
 
+addpath("ext_lib");
 addpath(genpath(fullfile('ext_lib', 'IPPE')));
 
 %undistort image
@@ -72,10 +73,10 @@ markerImgPts = zeros(4*numMarkersFound, 2);
 %to its 2D position.
 for i = 1:numMarkersFound
     corners = markerCornFound(i,:);
-    
+
     uPts = corners(1:2:end);
     vPts = corners(2:2:end);
-    
+
     markerImgPts((i-1)*4 + 1 : 4*i, :) = [uPts', vPts'];
 end
 
@@ -100,6 +101,13 @@ rotMat = refinedPoses.R1; %rotations of extrinsic (3x3)
 trans = (refinedPoses.t1)'; %translations of extrinsic (3x1)
 
 found = true;
+
+%add 3d axis to origin of board in image
+if nargout > 3
+    axisLen = 1.5*max(abs(diff(curCorner,1,1)), [], 'all');
+    T = [rotMat, trans'; 0,0,0,1];
+    imgOut = plot3Daxis2image(T, axisLen, K, imgOut, []);
+end
 
 end
 

@@ -166,7 +166,7 @@ zlabel("tz (m)");
 
 %% Pose estimation using IPPE
 
-[rotMat, trans] = ArucoPosEst(img, markerCornerCell, camParam);
+[rotMat, trans, ~, imgOut] = ArucoPosEst(img, markerCornerCell, camParam);
 data = [trans, rad2deg(rotm2eul(rotMat, 'ZYX'))];
 poseTable = array2table(data, 'VariableNames', {'tx (m)', 'ty (m)', 'tz (m)', 'Rz (DEG)', 'Ry (DEG)', 'Rx (DEG)'});
 disp(" ");
