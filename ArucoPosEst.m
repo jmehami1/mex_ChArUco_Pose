@@ -27,9 +27,6 @@ arguments
     doUndistortion = true
 end
 
-addpath("ext_lib");
-addpath(genpath(fullfile('ext_lib', 'IPPE')));
-
 %undistort image
 if doUndistortion
     imgUndistort = undistortImage(img, cameraParams);
