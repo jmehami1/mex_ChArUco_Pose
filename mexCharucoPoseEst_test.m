@@ -5,15 +5,18 @@
 clear;
 close all;
 
-%MEX function should be in the bin folder
-if exist("bin", "dir")
-    addpath("bin");
+
+%check if mex_ChArUco_Pose has been built
+if ~exist(fullfile("bin", "CharucoPosEst.mexa64"), 'file')
+    error("Please build mex_ChArUco_Pose submodule")
 else
-    error("mex function not built");
+    addpath("bin");
 end
 
+addpath("ext_lib");
+addpath(genpath(fullfile("ext_lib", "IPPE")));
 %robotics toolbox for visualising
-run(['rvctools' filesep 'startup_rvc.m']);
+run(fullfile('ext_lib', 'rvctools', 'startup_rvc.m'));
 
 %test image
 img = imread(['Images', filesep,'charuco_test.png']);

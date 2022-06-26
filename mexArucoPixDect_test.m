@@ -5,13 +5,15 @@
 clear;
 close all;
 
-%mex function should be in the bin folder
-if exist("bin", "dir")
-    addpath("bin");
+%check if mex_ChArUco_Pose has been built
+if ~exist(fullfile("bin", "ArucoPixDect.mexa64"), 'file')
+    error("Please build mex_ChArUco_Pose submodule")
 else
-    error("mex function not built");
+    addpath("bin");
 end
 
+addpath("ext_lib");
+addpath(genpath(fullfile("ext_lib", "IPPE")));
 %robotics toolbox for visualising
 run(fullfile('ext_lib', 'rvctools', 'startup_rvc.m'));
 
@@ -166,7 +168,7 @@ zlabel("tz (m)");
 
 %% Pose estimation using IPPE
 
-[rotMat, trans, ~, imgOut] = ArucoPosEst(img, markerCornerCell, camParam);
+[rotMat, trans, ~, imgOut, worldPts] = ArucoPosEst(img, markerCornerCell, camParam);
 data = [trans, rad2deg(rotm2eul(rotMat, 'ZYX'))];
 poseTable = array2table(data, 'VariableNames', {'tx (m)', 'ty (m)', 'tz (m)', 'Rz (DEG)', 'Ry (DEG)', 'Rx (DEG)'});
 disp(" ");

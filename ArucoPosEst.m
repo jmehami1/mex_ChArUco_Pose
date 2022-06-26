@@ -1,4 +1,4 @@
-function [rotMat, trans, found, imgOut] = ArucoPosEst(img, markerCornerCell, cameraParams, doUndistortion)
+function [rotMat, trans, found, imgOut, worldPts] = ArucoPosEst(img, markerCornerCell, cameraParams, doUndistortion)
 % Estimate the extrinsic pose of a ArUco planar board w.r.t to a frame
 % camera (Transformation from world coordinates to camera coordinates).
 % This Aruco board can work under occluded or missing markers.
@@ -17,7 +17,8 @@ function [rotMat, trans, found, imgOut] = ArucoPosEst(img, markerCornerCell, cam
 %       trans - translation matrix of extrinsic [1 x 3]
 %       found - flag if pose could be found
 %       imgOut - image with outlined markers found. Same size as input image
-%
+%       worldPts - actual 3D points used to determine the 3D pose of ArUco
+%           board
 % Author: Jasprabhjit Mehami, 13446277
 
 arguments
@@ -34,8 +35,12 @@ else
     imgUndistort = img;
 end
 
-%find the ArUco markers in the image
-[idsFound, markerCornFound, imgOut] = ArucoPixDect(imgUndistort);
+%get output image from MEX file
+if nargout > 3
+    [idsFound, markerCornFound, imgOut] = ArucoPixDect(imgUndistort);
+else
+    [idsFound, markerCornFound] = ArucoPixDect(imgUndistort);
+end
 
 %actual number of markers found in image
 numMarkersFound = length(idsFound);
@@ -70,10 +75,8 @@ markerImgPts = zeros(4*numMarkersFound, 2);
 %to its 2D position.
 for i = 1:numMarkersFound
     corners = markerCornFound(i,:);
-
     uPts = corners(1:2:end);
     vPts = corners(2:2:end);
-
     markerImgPts((i-1)*4 + 1 : 4*i, :) = [uPts', vPts'];
 end
 
@@ -104,6 +107,10 @@ if nargout > 3
     axisLen = 1.5*max(abs(diff(curCorner,1,1)), [], 'all');
     T = [rotMat, trans'; 0,0,0,1];
     imgOut = plot3Daxis2image(T, axisLen, K, imgOut, []);
+end
+
+if nargout > 4
+    worldPts = [markerPatPts, zeros(size(markerPatPts,1),1)];
 end
 
 end
