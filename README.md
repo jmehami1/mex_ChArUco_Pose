@@ -94,7 +94,7 @@ The extrinsic or the pose of the board w.r.t to the camera's coordinate frame is
 Instead, use the following function to estimate extrinsic pose of ArUco board:
 
 ```matlab
-[rotMat, trans, found, imgOut] = ArucoPosEst(img, markerCornerCell, cameraParams, doUndistortion);
+[rotMat, trans, found, imgOut, worldPts] = ArucoPosEst(img, markerCornerCell, cameraParams, doUndistortion);
 ```
 
 
