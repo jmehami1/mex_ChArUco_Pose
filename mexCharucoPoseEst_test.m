@@ -19,7 +19,7 @@ addpath(genpath(fullfile("ext_lib", "IPPE")));
 run(fullfile('ext_lib', 'rvctools', 'startup_rvc.m'));
 
 %test image
-img = imread(['Images', filesep,'charuco_test.png']);
+img = imread(fullfile('test_images','charuco_test.png'));
 
 %camera parameters
 intrMat = [532.568131996427,0,0;0,531.905416600879,0;327.499527166381,231.227840418968,1]; %intrinsic matrix for opencv format

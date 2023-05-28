@@ -18,7 +18,7 @@ addpath(genpath(fullfile("ext_lib", "IPPE")));
 run(fullfile('ext_lib', 'rvctools', 'startup_rvc.m'));
 
 %test image
-img = imread(fullfile('Images', 'aruco_test.png'));
+img = imread(fullfile('test_images', 'aruco_test.png'));
 
 
 %% camera parameters
@@ -101,9 +101,6 @@ imshow(img);
 [ids, markerCorner, imgOut] = ArucoPixDect(img);
 
 
-figure('Name', 'After');
-imshow(imgOut);
-
 if length(markerIDs) ~= length(ids)
     error('did not find all markers');
 end
@@ -140,6 +137,13 @@ disp(" ");
 disp("MATLAB built-in extrinsic function");
 disp(poseTable);
 
+axisLen = 1.5*max(abs(diff(markerPatPts(1:4,:),1,1)), [], 'all');
+T = [rotMat, trans'; 0,0,0,1];
+imgOut = plot3Daxis2image(T, axisLen, intrMat', imgOut, []);
+
+figure('Name', 'After (MATLAB built-in extrinsic estimation)');
+imshow(imgOut);
+
 
 patFig = figure('Name', 'Pose of pattern');
 
@@ -168,10 +172,14 @@ zlabel("tz (m)");
 
 %% Pose estimation using IPPE
 
-[rotMat, trans, ~, imgOut, worldPts] = ArucoPosEst(img, markerCornerCell, camParam);
+[rotMat, trans, poseFound, imgOut, worldPts] = ArucoPosEst(img, markerCornerCell, camParam);
 data = [trans, rad2deg(rotm2eul(rotMat, 'ZYX'))];
 poseTable = array2table(data, 'VariableNames', {'tx (m)', 'ty (m)', 'tz (m)', 'Rz (DEG)', 'Ry (DEG)', 'Rx (DEG)'});
 disp(" ");
 disp("IPPE");
 disp(poseTable);
+
+figure('Name', 'After (IPPE extrinsic estimation)');
+imshow(imgOut);
+
 
